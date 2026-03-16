@@ -64,14 +64,36 @@ html, body {
 .product-thumb {
   @apply w-full h-20 object-cover rounded cursor-pointer border border-transparent hover:border-gray-200;
 }
-@import 'tailwindcss';
+/* Header tweaks */
+.topbar { @apply bg-gray-50; }
+.topbar .container { @apply max-w-6xl mx-auto; }
+.logo { @apply text-2xl font-extrabold; }
+.main-nav a { @apply text-sm text-gray-700 hover:text-gray-900 font-medium; }
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
-@source '../**/*.blade.php';
-@source '../**/*.js';
-
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+/* Full-width hero background helper (used by home view) */
+.hero-full {
+  background-size: cover;
+  background-position: center;
 }
+.hero-content { @apply relative z-10 text-white; }
+.hero-overlay { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.35), rgba(0,0,0,0.06)); }
+
+/* Product card hover overlay */
+.image-wrap { position: relative; }
+.image-overlay { position: absolute; inset: 0; display:flex; align-items:center; justify-content:center; background: rgba(0,0,0,0.36); opacity: 0; transition: opacity .18s ease-in-out; }
+.image-wrap:hover .image-overlay { opacity: 1; }
+.product-badge { position: absolute; top: 0.5rem; left: 0.5rem; background: rgba(0,0,0,0.8); color: #fff; padding: .25rem .5rem; font-size: .75rem; border-radius: .25rem; }
+
+.price-old { color: #9CA3AF; text-decoration: line-through; margin-right: .5rem; }
+.price-current { font-weight: 700; color: var(--brand); }
+
+.product-grid { display:grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 1.5rem; }
+@media (min-width: 768px) {
+  .product-grid { grid-template-columns: repeat(3, minmax(0,1fr)); }
+}
+@media (min-width: 1024px) {
+  .product-grid { grid-template-columns: repeat(4, minmax(0,1fr)); }
+}
+
+.site-footer { @apply py-8; }
+

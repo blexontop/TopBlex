@@ -10,6 +10,8 @@
 <body class="bg-white text-gray-900 antialiased">
     @include('partials.header')
 
+    @yield('hero')
+
     <main class="container mx-auto px-4 py-8">
         @yield('content')
     </main>
