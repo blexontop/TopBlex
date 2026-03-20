@@ -7,12 +7,15 @@
     @vite(['resources/css/app.css','resources/js/app.js'])
     @stack('head')
 </head>
-<body class="bg-white text-gray-900 antialiased">
+<body class="app-body antialiased">
     @include('partials.header')
 
     @yield('hero')
 
-    <main class="container mx-auto px-4 py-8">
+    <main class="container app-main">
+        @if(session('success'))
+            <div class="alert-success">{{ session('success') }}</div>
+        @endif
         @yield('content')
     </main>
 

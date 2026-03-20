@@ -5,6 +5,15 @@
         <div>
             @php
                 $images = \Illuminate\Support\Facades\DB::table('imagen_productos')->where('producto_id', $producto->id)->orderBy('orden')->get();
+                $fallbacks = [
+                    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1541099649105-f69ad21f3246?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=1200&q=80',
+                    'https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=1200&q=80',
+                ];
+                $fallback = $fallbacks[$producto->id % count($fallbacks)];
             @endphp
             <div class="space-y-2">
                 @if($images->isNotEmpty())
@@ -15,19 +24,19 @@
                             @endforeach
                         </div>
                 @else
-                    <img src="https://via.placeholder.com/800x600?text=Producto" alt="{{ $producto->nombre }}" class="w-full h-96 object-cover rounded" />
+                    <img src="{{ $fallback }}" alt="{{ $producto->nombre }}" class="product-main-img" />
                 @endif
             </div>
         </div>
         <div>
-            <h1 class="text-2xl font-bold">{{ $producto->nombre }}</h1>
-            <div class="text-xl font-semibold mt-2">{{ $producto->precio ? '$'.number_format($producto->precio, 2) : '—' }}</div>
-            <p class="text-gray-700 mt-4">{!! nl2br(e($producto->descripcion)) !!}</p>
+            <h1 class="product-detail-title">{{ $producto->nombre }}</h1>
+            <div class="product-detail-price">{{ $producto->precio ? '$'.number_format($producto->precio, 2) : '-' }}</div>
+            <p class="product-detail-description">{!! nl2br(e($producto->descripcion)) !!}</p>
 
-            <form action="{{ url('/carrito/agregar') }}" method="POST" class="mt-6">
+            <form action="{{ route('carrito.agregar') }}" method="POST" class="mt-6">
                 @csrf
                 <input type="hidden" name="producto_id" value="{{ $producto->id }}">
-                <button class="bg-black text-white px-6 py-2 rounded">Añadir al carrito</button>
+                <button class="btn-primary" type="submit">Anadir al carrito</button>
             </form>
         </div>
     </div>
