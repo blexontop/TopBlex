@@ -155,7 +155,7 @@ Route::middleware('guest')->group(function () {
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('cuenta')->with('success', 'Cuenta creada correctamente.');
+        return redirect()->route('cuenta')->with('success', 'Hola, ' . $user->name . '. Tu cuenta se creo correctamente.');
     })->name('register.store');
 });
 
@@ -171,25 +171,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/mi-cuenta', function (Request $request) {
         $user = $request->user();
 
-        $pedidos = Pedido::query()
-            ->with(['items'])
-            ->where('user_id', $user->id)
-            ->latest()
-            ->get();
-
-        $statsCuenta = [
-            'pedidos_total' => $pedidos->count(),
-            'pedidos_pendientes' => $pedidos->where('estado', 'pendiente')->count(),
-            'total_gastado' => (float) $pedidos->sum('total'),
-            'ultimo_pedido' => $pedidos->first(),
-            'mensajes_enviados' => DB::table('mensaje_contactos')->where('user_id', $user->id)->count(),
-        ];
-
-        return view('cuenta.index', [
-            'user' => $user,
-            'pedidos' => $pedidos,
-            'statsCuenta' => $statsCuenta,
-        ]);
+        return view('cuenta.index', compact('user'));
     })->name('cuenta');
 
     Route::put('/mi-cuenta', function (Request $request) {
@@ -269,8 +251,16 @@ Route::middleware('auth')->group(function () {
         return redirect()->route('cuenta')->with('success', 'Pedido ' . $pedido->codigo . ' realizado con exito.');
     })->name('pedidos.confirmar');
 
-    Route::get('/pedidos', function () {
-        return redirect()->to(route('cuenta') . '#pedidos');
+    Route::get('/pedidos', function (Request $request) {
+        $user = $request->user();
+
+        $pedidos = Pedido::query()
+            ->with(['items'])
+            ->where('user_id', $user->id)
+            ->latest()
+            ->get();
+
+        return view('pedidos.index', compact('pedidos'));
     })->name('pedidos');
 });
 
