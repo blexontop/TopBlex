@@ -9,15 +9,15 @@
                 <div>
                     <div class="footer-title">Tienda</div>
                     <ul>
-                        <li><a class="footer-link" href="{{ route('productos.index') }}">Productos</a></li>
-                        <li><a class="footer-link" href="{{ route('categorias.index') }}">Categorias</a></li>
+                        <li><a class="footer-link" href="{{ route('products.index') }}">Productos</a></li>
+                        <li><a class="footer-link" href="{{ route('categories.index') }}">Categorias</a></li>
                     </ul>
                 </div>
                 <div>
                     <div class="footer-title">Soporte</div>
                     <ul>
-                        <li><a class="footer-link" href="{{ route('contacto') }}">Contacto</a></li>
-                        <li><a class="footer-link" href="{{ route('faq') }}">Preguntas frecuentes</a></li>
+                        <li><a class="footer-link" href="{{ route('contact.index') }}">Contacto</a></li>
+                        <li><a class="footer-link" href="{{ route('faqs.index') }}">Preguntas frecuentes</a></li>
                     </ul>
                 </div>
             </div>

@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            if (!Schema::hasColumn('users', 'telefono')) {
-                $table->string('telefono')->nullable()->after('email');
+            if (!Schema::hasColumn('users', 'phone')) {
+                $table->string('phone')->nullable()->after('email');
             }
-            if (!Schema::hasColumn('users', 'ciudad')) {
-                $table->string('ciudad')->nullable()->after('telefono');
+            if (!Schema::hasColumn('users', 'city')) {
+                $table->string('city')->nullable()->after('phone');
             }
-            if (!Schema::hasColumn('users', 'direccion')) {
-                $table->string('direccion')->nullable()->after('ciudad');
+            if (!Schema::hasColumn('users', 'address')) {
+                $table->string('address')->nullable()->after('city');
             }
         });
     }
@@ -25,14 +25,14 @@ return new class extends Migration
     {
         Schema::table('users', function (Blueprint $table) {
             $drop = [];
-            if (Schema::hasColumn('users', 'telefono')) {
-                $drop[] = 'telefono';
+            if (Schema::hasColumn('users', 'phone')) {
+                $drop[] = 'phone';
             }
-            if (Schema::hasColumn('users', 'ciudad')) {
-                $drop[] = 'ciudad';
+            if (Schema::hasColumn('users', 'city')) {
+                $drop[] = 'city';
             }
-            if (Schema::hasColumn('users', 'direccion')) {
-                $drop[] = 'direccion';
+            if (Schema::hasColumn('users', 'address')) {
+                $drop[] = 'address';
             }
             if (!empty($drop)) {
                 $table->dropColumn($drop);

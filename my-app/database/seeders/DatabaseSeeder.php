@@ -23,8 +23,8 @@ class DatabaseSeeder extends Seeder
             'password' => Hash::make('password'),
         ]);
 
-        $this->call(CatalogoDemoSeeder::class);
-        $this->call(PreguntaFrecuenteSeeder::class);
-        $this->call(PedidoDemoSeeder::class);
+        $this->call(CatalogDemoSeeder::class);
+        $this->call(FaqSeeder::class);
+        $this->call(OrderDemoSeeder::class);
     }
 }

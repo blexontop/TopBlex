@@ -22,9 +22,9 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
-        'telefono',
-        'ciudad',
-        'direccion',
+        'phone',
+        'city',
+        'address',
         'password',
     ];
 
@@ -51,13 +51,13 @@ class User extends Authenticatable
         ];
     }
 
-    public function pedidos(): HasMany
+    public function orders(): HasMany
     {
-        return $this->hasMany(Pedido::class, 'user_id');
+        return $this->hasMany(Order::class, 'user_id');
     }
 
-    public function mensajesContacto(): HasMany
+    public function contactMessages(): HasMany
     {
-        return $this->hasMany(MensajeContacto::class, 'user_id');
+        return $this->hasMany(ContactMessage::class, 'user_id');
     }
 }

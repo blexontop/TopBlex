@@ -32,7 +32,7 @@
                 </div>
 
                 <div>
-                    <label for="password_confirmation" class="form-label">Confirmar contrasena</label>
+                    <label for="password_confirmation" class="form-label">Confirmar password</label>
                     <input id="password_confirmation" type="password" name="password_confirmation" class="input-base" required autocomplete="new-password" />
                 </div>
 

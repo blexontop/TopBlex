@@ -35,7 +35,7 @@
                 <a href="{{ route('products.index') }}" class="btn-ghost">Seguir comprando</a>
 
                 @auth
-                    <form action="{{ route('orders.confirmar') }}" method="POST">
+                    <form action="{{ route('orders.confirm') }}" method="POST">
                         @csrf
                         <button type="submit" class="btn-primary">Finalizar pedido</button>
                     </form>

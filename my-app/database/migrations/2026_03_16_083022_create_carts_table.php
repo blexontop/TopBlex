@@ -11,12 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('colors', function (Blueprint $table) {
+        Schema::create('carts', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->string('code')->nullable();
-            $table->string('slug')->nullable()->unique();
-            $table->boolean('is_active')->default(true);
+            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
+            $table->string('session_id')->nullable()->index();
+            $table->decimal('total', 10, 2)->default(0);
             $table->timestamps();
         });
     }
@@ -26,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('colors');
+        Schema::dropIfExists('carts');
     }
 };

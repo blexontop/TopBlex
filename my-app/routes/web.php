@@ -1,43 +1,64 @@
 <?php
 
-use App\Models\Categoria;
-use App\Models\ItemPedido;
-use App\Models\Pedido;
-use App\Models\Pago;
-use App\Models\PreguntaFrecuente;
-use App\Models\Producto;
+use App\Models\Category;
+use App\Models\OrderItem;
+use App\Models\Order;
+use App\Models\Payment;
+use App\Models\Faq;
+use App\Models\Product;
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 Route::get('/', function () {
-    $productos = Producto::where('visible', true)->latest()->take(12)->get();
-    return view('home', compact('productos'));
+    $products = collect();
+
+    if (Schema::hasTable('products')) {
+        try {
+            $products = Product::where('is_visible', true)->latest()->take(12)->get();
+        } catch (QueryException) {
+            $products = collect();
+        }
+    }
+
+    return view('home', compact('products'));
 })->name('home');
 
-Route::get('/productos', function () {
-    $query = Producto::query()->with('categoria');
+Route::get('/products', function () {
+    if (!Schema::hasTable('products') || !Schema::hasTable('categories')) {
+        return view('products.index', [
+            'products' => collect(),
+            'generos' => collect(),
+            'tiposDisponibles' => collect(),
+            'generoSeleccionado' => null,
+            'tipoSeleccionado' => null,
+        ]);
+    }
+
+    $query = Product::query()->with('category');
 
     $generoSeleccionado = request('genero');
     $tipoSeleccionado = request('tipo');
 
-    $generos = Categoria::query()
+    $generos = Category::query()
         ->whereNull('parent_id')
         ->whereIn('slug', ['hombre', 'mujer'])
-        ->where('activo', true)
+        ->where('is_active', true)
         ->with(['children' => function ($q) {
-            $q->where('activo', true)->orderBy('orden')->orderBy('nombre');
+            $q->where('is_active', true)->orderBy('sort_order')->orderBy('name');
         }])
-        ->orderBy('orden')
-        ->orderBy('nombre')
+        ->orderBy('sort_order')
+        ->orderBy('name')
         ->get();
 
     if ($generoSeleccionado) {
-        $query->whereHas('categoria', function ($q) use ($generoSeleccionado) {
+        $query->whereHas('category', function ($q) use ($generoSeleccionado) {
             $q->where('slug', $generoSeleccionado)
               ->orWhereHas('parent', function ($p) use ($generoSeleccionado) {
                   $p->where('slug', $generoSeleccionado);
@@ -46,29 +67,29 @@ Route::get('/productos', function () {
     }
 
     if ($tipoSeleccionado) {
-        $query->whereHas('categoria', function ($q) use ($tipoSeleccionado) {
+        $query->whereHas('category', function ($q) use ($tipoSeleccionado) {
             $q->where('slug', $tipoSeleccionado);
         });
     }
 
     if ($q = request('q')) {
         $query->where(function ($sq) use ($q) {
-            $sq->where('nombre', 'like', "%{$q}%")
-               ->orWhere('descripcion', 'like', "%{$q}%");
+            $sq->where('name', 'like', "%{$q}%")
+               ->orWhere('description', 'like', "%{$q}%");
         });
     }
 
     $sort = request('sort', 'latest');
     if ($sort === 'price_asc') {
-        $query->orderBy('precio', 'asc');
+        $query->orderBy('price', 'asc');
     } elseif ($sort === 'price_desc') {
-        $query->orderBy('precio', 'desc');
+        $query->orderBy('price', 'desc');
     } else {
         $query->latest();
     }
 
-    $productos = $query
-        ->where('visible', true)
+    $products = $query
+        ->where('is_visible', true)
         ->paginate(12)
         ->appends(request()->query());
 
@@ -78,38 +99,38 @@ Route::get('/productos', function () {
             ->firstWhere('slug', $generoSeleccionado)?->children ?? collect();
     }
 
-    return view('productos.index', compact(
-        'productos',
+    return view('products.index', compact(
+        'products',
         'generos',
         'tiposDisponibles',
         'generoSeleccionado',
         'tipoSeleccionado'
     ));
-})->name('productos.index');
+})->name('products.index');
 
-Route::get('/categorias', function () {
-    return redirect()->route('productos.index');
-})->name('categorias.index');
+Route::get('/categories', function () {
+    return redirect()->route('products.index');
+})->name('categories.index');
 
-Route::get('/colecciones', function () {
-    return redirect()->route('productos.index');
-})->name('colecciones.index');
+Route::get('/collections', function () {
+    return redirect()->route('products.index');
+})->name('collections.index');
 
-Route::get('/productos/{producto}', function (\App\Models\Producto $producto) {
-    return view('productos.show', compact('producto'));
-})->name('productos.show');
+Route::get('/products/{product}', function (\App\Models\Product $product) {
+    return view('products.show', ['producto' => $product]);
+})->name('products.show');
 
-Route::get('/carrito', function (Request $request) {
+Route::get('/cart', function (Request $request) {
     $cart = collect($request->session()->get('cart', []));
     $total = $cart->sum(function (array $item) {
-        return ($item['precio'] ?? 0) * ($item['cantidad'] ?? 1);
+        return ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
     });
 
-    return view('carrito.index', [
+    return view('cart.index', [
         'items' => $cart->values(),
         'total' => $total,
     ]);
-})->name('carrito.index');
+})->name('cart.index');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', function () {
@@ -132,14 +153,14 @@ Route::middleware('guest')->group(function () {
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('cuenta'));
+        return redirect()->intended(route('account.index'));
     })->name('login.attempt');
 
-    Route::get('/registro', function () {
+    Route::get('/register', function () {
         return view('auth.register');
     })->name('register');
 
-    Route::post('/registro', function (Request $request) {
+    Route::post('/register', function (Request $request) {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
@@ -155,7 +176,7 @@ Route::middleware('guest')->group(function () {
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('cuenta')->with('success', 'Hola, ' . $user->name . '. Tu cuenta se creo correctamente.');
+        return redirect()->route('account.index')->with('success', 'Hola, ' . $user->name . '. Tu cuenta se creo correctamente.');
     })->name('register.store');
 });
 
@@ -168,21 +189,21 @@ Route::post('/logout', function (Request $request) {
 })->middleware('auth')->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/mi-cuenta', function (Request $request) {
+    Route::get('/account', function (Request $request) {
         $user = $request->user();
 
-        return view('cuenta.index', compact('user'));
-    })->name('cuenta');
+        return view('account.index', compact('user'));
+    })->name('account.index');
 
-    Route::put('/mi-cuenta', function (Request $request) {
+    Route::put('/account', function (Request $request) {
         $user = $request->user();
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'telefono' => ['nullable', 'string', 'max:50'],
-            'ciudad' => ['nullable', 'string', 'max:100'],
-            'direccion' => ['nullable', 'string', 'max:255'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'city' => ['nullable', 'string', 'max:100'],
+            'address' => ['nullable', 'string', 'max:255'],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
@@ -195,52 +216,52 @@ Route::middleware('auth')->group(function () {
         $user->update($data);
 
         return back()->with('success', 'Tu informacion se guardo correctamente.');
-    })->name('cuenta.update');
+    })->name('account.update');
 
-    Route::post('/pedidos/confirmar', function (Request $request) {
+    Route::post('/orders/confirm', function (Request $request) {
         $cart = collect($request->session()->get('cart', []));
         if ($cart->isEmpty()) {
-            return redirect()->route('carrito.index')->with('success', 'Tu carrito esta vacio.');
+            return redirect()->route('cart.index')->with('success', 'Tu carrito esta vacio.');
         }
 
         $user = $request->user();
 
         $pedido = DB::transaction(function () use ($cart, $user) {
             $total = (float) $cart->sum(function (array $item) {
-                return ($item['precio'] ?? 0) * ($item['cantidad'] ?? 1);
+                return ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
             });
 
-            $codigo = 'TBX-' . Str::upper(Str::random(8));
+            $code = 'TBX-' . Str::upper(Str::random(8));
 
-            $pedido = Pedido::create([
+            $pedido = Order::create([
                 'user_id' => $user->id,
-                'codigo' => $codigo,
-                'estado' => 'pendiente',
+                'code' => $code,
+                'status' => 'pending',
                 'total' => $total,
-                'moneda' => 'EUR',
-                'direccion_envio' => trim(($user->direccion ?? '') . ' ' . ($user->ciudad ?? '')),
+                'currency' => 'EUR',
+                'shipping_address' => trim(($user->address ?? '') . ' ' . ($user->city ?? '')),
             ]);
 
             foreach ($cart as $item) {
-                $cantidad = (int) ($item['cantidad'] ?? 1);
-                $precio = (float) ($item['precio'] ?? 0);
+                $quantity = (int) ($item['quantity'] ?? 1);
+                $price = (float) ($item['price'] ?? 0);
 
-                ItemPedido::create([
-                    'pedido_id' => $pedido->id,
-                    'producto_id' => $item['id'] ?? null,
-                    'nombre_producto' => (string) ($item['nombre'] ?? 'Producto'),
-                    'precio_unitario' => $precio,
-                    'cantidad' => $cantidad,
-                    'subtotal' => $precio * $cantidad,
+                OrderItem::create([
+                    'order_id' => $pedido->id,
+                    'product_id' => $item['id'] ?? null,
+                    'product_name' => (string) ($item['name'] ?? 'Product'),
+                    'unit_price' => $price,
+                    'quantity' => $quantity,
+                    'subtotal' => $price * $quantity,
                 ]);
             }
 
-            Pago::create([
-                'pedido_id' => $pedido->id,
-                'metodo' => 'pendiente',
-                'estado' => 'pendiente',
-                'referencia' => 'REF-' . Str::upper(Str::random(10)),
-                'monto' => $total,
+            Payment::create([
+                'order_id' => $pedido->id,
+                'method' => 'pending',
+                'status' => 'pending',
+                'reference' => 'REF-' . Str::upper(Str::random(10)),
+                'amount' => $total,
             ]);
 
             return $pedido;
@@ -248,83 +269,83 @@ Route::middleware('auth')->group(function () {
 
         $request->session()->forget('cart');
 
-        return redirect()->route('cuenta')->with('success', 'Pedido ' . $pedido->codigo . ' realizado con exito.');
-    })->name('pedidos.confirmar');
+        return redirect()->route('account.index')->with('success', 'Order ' . $pedido->code . ' realizado con exito.');
+    })->name('orders.confirm');
 
-    Route::get('/pedidos', function (Request $request) {
+    Route::get('/orders', function (Request $request) {
         $user = $request->user();
 
-        $pedidos = Pedido::query()
+        $orders = Order::query()
             ->with(['items'])
             ->where('user_id', $user->id)
             ->latest()
             ->get();
 
-        return view('pedidos.index', compact('pedidos'));
-    })->name('pedidos');
+        return view('orders.index', compact('orders'));
+    })->name('orders.index');
 });
 
-Route::get('/contacto', function () {
-    return view('contacto.index');
-})->name('contacto');
+Route::get('/contact', function () {
+    return view('contact.index');
+})->name('contact.index');
 
-Route::post('/contacto', function (Request $request) {
+Route::post('/contact', function (Request $request) {
     $data = $request->validate([
-        'nombre' => ['required', 'string', 'max:120'],
+        'name' => ['required', 'string', 'max:120'],
         'email' => ['required', 'email', 'max:180'],
-        'asunto' => ['required', 'string', 'max:180'],
-        'mensaje' => ['required', 'string', 'max:3000'],
+        'subject' => ['required', 'string', 'max:180'],
+        'message' => ['required', 'string', 'max:3000'],
     ]);
 
-    DB::table('mensaje_contactos')->insert([
+    DB::table('contact_messages')->insert([
         'user_id' => Auth::id(),
-        'nombre' => $data['nombre'],
+        'name' => $data['name'],
         'email' => $data['email'],
-        'asunto' => $data['asunto'],
-        'mensaje' => $data['mensaje'],
+        'subject' => $data['subject'],
+        'message' => $data['message'],
         'created_at' => now(),
         'updated_at' => now(),
     ]);
 
     return back()->with('success', 'Mensaje enviado correctamente.');
-})->name('contacto.store');
+})->name('contact.store');
 
-Route::get('/preguntas-frecuentes', function () {
-    $preguntas = PreguntaFrecuente::query()
-        ->where('activo', true)
-        ->orderBy('orden')
+Route::get('/faqs', function () {
+    $preguntas = Faq::query()
+        ->where('is_active', true)
+        ->orderBy('sort_order')
         ->orderByDesc('id')
         ->get();
 
-    return view('faq.index', compact('preguntas'));
-})->name('faq');
+    return view('faqs.index', compact('preguntas'));
+})->name('faqs.index');
 
-Route::post('/carrito/agregar', function (Request $request) {
+Route::post('/cart/add', function (Request $request) {
     $validated = $request->validate([
-        'producto_id' => ['required', 'integer'],
+        'product_id' => ['required', 'integer'],
     ]);
 
-    $producto = \App\Models\Producto::find($validated['producto_id']);
+    $producto = \App\Models\Product::find($validated['product_id']);
     if (!$producto) {
-        return back()->with('success', 'Producto no encontrado.');
+        return back()->with('success', 'Product no encontrado.');
     }
 
     $cart = $request->session()->get('cart', []);
     $key = (string) $producto->id;
 
     if (isset($cart[$key])) {
-        $cart[$key]['cantidad']++;
+        $cart[$key]['quantity']++;
     } else {
         $cart[$key] = [
             'id' => $producto->id,
-            'nombre' => $producto->nombre,
-            'precio' => (float) ($producto->precio ?? 0),
-            'cantidad' => 1,
+            'name' => $producto->name,
+            'price' => (float) ($producto->price ?? 0),
+            'quantity' => 1,
         ];
     }
 
     $request->session()->put('cart', $cart);
 
-    return back()->with('success', 'Producto anadido al carrito.');
-})->name('carrito.agregar');
+    return back()->with('success', 'Product anadido al carrito.');
+})->name('cart.add');
 
