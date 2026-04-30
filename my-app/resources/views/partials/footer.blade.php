@@ -10,7 +10,7 @@
                     <div class="footer-title">Tienda</div>
                     <ul>
                         <li><a class="footer-link" href="{{ route('products.index') }}">Productos</a></li>
-                        <li><a class="footer-link" href="{{ route('categories.index') }}">Categorias</a></li>
+                        <li><a class="footer-link" href="{{ route('products.index') }}">Categorias (filtro en tienda)</a></li>
                     </ul>
                 </div>
                 <div>

@@ -61,12 +61,6 @@
                 <a href="{{ route('products.index') }}" class="nav-item {{ request()->routeIs('products.*') ? 'nav-item--active' : '' }}">
                     <span class="nav-item-icon">&#9632;</span> Tienda
                 </a>
-                <a href="{{ route('categories.index') }}" class="nav-item {{ request()->routeIs('categories.*') ? 'nav-item--active' : '' }}">
-                    <span class="nav-item-icon">&#9632;</span> Categorías
-                </a>
-                <a href="{{ route('collections.index') }}" class="nav-item {{ request()->routeIs('collections.*') ? 'nav-item--active' : '' }}">
-                    <span class="nav-item-icon">&#9632;</span> Colecciones
-                </a>
             </div>
             @auth
             <div class="nav-links">

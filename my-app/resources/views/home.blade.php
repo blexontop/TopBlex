@@ -9,7 +9,6 @@
                 <p class="mt-4 text-gray-100">Colecciones seleccionadas, materiales de calidad y envío rápido. Descubre lo último en nuestra tienda.</p>
                 <div class="mt-6">
                     <a href="{{ url('/products') }}" class="btn-primary">Ver productos</a>
-                    <a href="{{ route('collections.index') }}" class="btn-ghost ml-3">Colecciones</a>
                 </div>
             </div>
         </div>

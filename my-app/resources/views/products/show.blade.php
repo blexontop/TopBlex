@@ -5,6 +5,7 @@
         <div>
             @php
                 $images = \Illuminate\Support\Facades\DB::table('product_images')->where('product_id', $producto->id)->orderBy('sort_order')->get();
+                $mainImage = $images->first()?->url;
                 $fallbacks = [
                     'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=1200&q=80',
                     'https://images.unsplash.com/photo-1445205170230-053b83016050?auto=format&fit=crop&w=1200&q=80',
@@ -16,16 +17,7 @@
                 $fallback = $fallbacks[$producto->id % count($fallbacks)];
             @endphp
             <div class="space-y-2">
-                @if($images->isNotEmpty())
-                        <img src="{{ $images->first()->url }}" alt="{{ $producto->name }}" class="product-main-img" />
-                        <div class="grid grid-cols-4 gap-2 mt-2">
-                            @foreach($images as $img)
-                                <img src="{{ $img->url }}" data-src="{{ $img->url }}" class="product-thumb" />
-                            @endforeach
-                        </div>
-                @else
-                    <img src="{{ $fallback }}" alt="{{ $producto->name }}" class="product-main-img" />
-                @endif
+                <img src="{{ $mainImage ?? $fallback }}" alt="{{ $producto->name }}" class="product-main-img max-w-sm mx-auto" />
             </div>
         </div>
         <div>

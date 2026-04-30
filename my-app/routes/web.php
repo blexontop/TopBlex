@@ -36,14 +36,14 @@ Route::get('/products', function () {
             'products' => collect(),
             'generos' => collect(),
             'tiposDisponibles' => collect(),
-            'generoSeleccionado' => null,
+            'generoSeleccionado' => 'all',
             'tipoSeleccionado' => null,
         ]);
     }
 
     $query = Product::query()->with('category');
 
-    $generoSeleccionado = request('genero');
+    $generoSeleccionado = request('genero', 'all');
     $tipoSeleccionado = request('tipo');
 
     $generos = Category::query()
@@ -51,13 +51,15 @@ Route::get('/products', function () {
         ->whereIn('slug', ['hombre', 'mujer'])
         ->where('is_active', true)
         ->with(['children' => function ($q) {
-            $q->where('is_active', true)->orderBy('sort_order')->orderBy('name');
+            $q->where('is_active', true)
+              ->orderBy('sort_order')
+              ->orderBy('name');
         }])
         ->orderBy('sort_order')
         ->orderBy('name')
         ->get();
 
-    if ($generoSeleccionado) {
+    if (in_array($generoSeleccionado, ['hombre', 'mujer'], true)) {
         $query->whereHas('category', function ($q) use ($generoSeleccionado) {
             $q->where('slug', $generoSeleccionado)
               ->orWhereHas('parent', function ($p) use ($generoSeleccionado) {
@@ -94,7 +96,7 @@ Route::get('/products', function () {
         ->appends(request()->query());
 
     $tiposDisponibles = collect();
-    if ($generoSeleccionado) {
+    if (in_array($generoSeleccionado, ['hombre', 'mujer'], true)) {
         $tiposDisponibles = $generos
             ->firstWhere('slug', $generoSeleccionado)?->children ?? collect();
     }
