@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CheckoutController;
 use App\Mail\WelcomeToTopblexMail;
 use App\Models\Category;
 use App\Models\OrderItem;
@@ -223,6 +224,11 @@ Route::middleware('auth')->group(function () {
 
         return back()->with('success', 'Tu informacion se guardo correctamente.');
     })->name('account.update');
+
+    Route::get('/checkout/stripe', [CheckoutController::class, 'show'])->name('stripe.checkout.show');
+    Route::post('/checkout/stripe/session', [CheckoutController::class, 'createSession'])->name('stripe.checkout.session');
+    Route::get('/checkout/stripe/success', [CheckoutController::class, 'success'])->name('stripe.checkout.success');
+    Route::get('/checkout/stripe/cancel', [CheckoutController::class, 'cancel'])->name('stripe.checkout.cancel');
 
     Route::post('/orders/confirm', function (Request $request) {
         $cart = collect($request->session()->get('cart', []));

@@ -35,10 +35,7 @@
                 <a href="{{ route('products.index') }}" class="btn-ghost">Seguir comprando</a>
 
                 @auth
-                    <form action="{{ route('orders.confirm') }}" method="POST">
-                        @csrf
-                        <button type="submit" class="btn-primary">Finalizar pedido</button>
-                    </form>
+                    <a href="{{ route('stripe.checkout.show') }}" class="btn-primary">Finalizar pedido</a>
                 @else
                     <a href="{{ route('login') }}" class="btn-primary">Inicia sesion para comprar</a>
                 @endauth
