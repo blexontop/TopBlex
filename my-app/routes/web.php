@@ -1,5 +1,6 @@
 <?php
 
+use App\Mail\WelcomeToTopblexMail;
 use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Order;
@@ -12,6 +13,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -174,6 +176,8 @@ Route::middleware('guest')->group(function () {
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
+
+        Mail::to($user->email)->send(new WelcomeToTopblexMail($user));
 
         Auth::login($user);
         $request->session()->regenerate();
