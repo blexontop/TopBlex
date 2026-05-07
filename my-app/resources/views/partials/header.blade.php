@@ -35,8 +35,15 @@
         {{-- Acciones --}}
         <div class="header-actions">
             @auth
+                @php
+                    $adminEmails = array_filter(config('app.admin_emails', []));
+                    $canAccessAdmin = in_array(auth()->user()->email, $adminEmails, true) || (empty($adminEmails) && (int) auth()->id() === 1);
+                @endphp
                 <div class="user-greeting">Hola&nbsp;<strong>{{ auth()->user()->name }}</strong></div>
                 <a href="{{ route('account.index') }}" class="account-link">Mi cuenta</a>
+                @if($canAccessAdmin)
+                    <a href="{{ route('admin.dashboard') }}" class="account-link">Admin</a>
+                @endif
                 <form action="{{ route('logout') }}" method="POST" class="inline-flex">
                     @csrf
                     <button type="submit" class="orders-link">Salir</button>

@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
+use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\CheckoutController;
 use App\Mail\WelcomeToTopblexMail;
 use App\Models\Category;
@@ -295,6 +297,14 @@ Route::middleware('auth')->group(function () {
 
         return view('orders.index', compact('orders'));
     })->name('orders.index');
+});
+
+Route::prefix('admin')->name('admin.')->middleware(['auth', 'esadmin'])->group(function () {
+    Route::get('/', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+    Route::resource('products', AdminProductController::class)->except(['show']);
+    Route::patch('/products/{product}/stock', [AdminProductController::class, 'updateStock'])
+        ->name('products.stock');
 });
 
 Route::get('/contact', function () {

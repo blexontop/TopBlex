@@ -15,6 +15,21 @@ class EsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
+        $user = $request->user();
+
+        if (!$user) {
+            abort(403, 'No autorizado.');
+        }
+
+        $adminEmails = array_filter(config('app.admin_emails', []));
+
+        $isAllowedByEmail = in_array($user->email, $adminEmails, true);
+        $isFallbackAdmin = empty($adminEmails) && (int) $user->id === 1;
+
+        if (!$isAllowedByEmail && !$isFallbackAdmin) {
+            abort(403, 'No autorizado.');
+        }
+
         return $next($request);
     }
 }
