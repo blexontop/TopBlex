@@ -160,6 +160,11 @@ Route::middleware('guest')->group(function () {
 
         $request->session()->regenerate();
 
+        // Redirigir según el rol del usuario
+        if (Auth::user()->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
         return redirect()->intended(route('account.index'));
     })->name('login.attempt');
 
@@ -185,7 +190,14 @@ Route::middleware('guest')->group(function () {
         Auth::login($user);
         $request->session()->regenerate();
 
-        return redirect()->route('account.index')->with('success', 'Hola, ' . $user->name . '. Tu cuenta se creo correctamente.');
+        $message = 'Hola, ' . $user->name . '. Tu cuenta se creo correctamente.';
+
+        // Redirigir según el rol del usuario
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard')->with('success', $message);
+        }
+
+        return redirect()->route('account.index')->with('success', $message);
     })->name('register.store');
 });
 
@@ -200,6 +212,11 @@ Route::post('/logout', function (Request $request) {
 Route::middleware('auth')->group(function () {
     Route::get('/account', function (Request $request) {
         $user = $request->user();
+
+        // Redirigir admins al panel de admin
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
 
         return view('account.index', compact('user'));
     })->name('account.index');

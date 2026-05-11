@@ -35,15 +35,15 @@
         {{-- Acciones --}}
         <div class="header-actions">
             @auth
-                @php
-                    $adminEmails = array_filter(config('app.admin_emails', []));
-                    $canAccessAdmin = in_array(auth()->user()->email, $adminEmails, true) || (empty($adminEmails) && (int) auth()->id() === 1);
-                @endphp
                 <div class="user-greeting">Hola&nbsp;<strong>{{ auth()->user()->name }}</strong></div>
-                <a href="{{ route('account.index') }}" class="account-link">Mi cuenta</a>
-                @if($canAccessAdmin)
-                    <a href="{{ route('admin.dashboard') }}" class="account-link">Admin</a>
+                
+                @if(auth()->user()->isAdmin())
+                    <a href="{{ route('admin.dashboard') }}" class="account-link">Panel Admin</a>
+                @else
+                    <a href="{{ route('account.index') }}" class="account-link">Mi cuenta</a>
+                    <a href="{{ route('orders.index') }}" class="account-link">Mis órdenes</a>
                 @endif
+                
                 <form action="{{ route('logout') }}" method="POST" class="inline-flex">
                     @csrf
                     <button type="submit" class="orders-link">Salir</button>
@@ -70,10 +70,12 @@
                 </a>
             </div>
             @auth
-            <div class="nav-links">
-                <a href="{{ route('orders.index') }}" class="nav-item {{ request()->routeIs('orders.*') ? 'nav-item--active' : '' }}">Mis orders</a>
-                <a href="{{ route('contact.index') }}" class="nav-item">Contacto</a>
-            </div>
+                @if(!auth()->user()->isAdmin())
+                    <div class="nav-links">
+                        <a href="{{ route('orders.index') }}" class="nav-item {{ request()->routeIs('orders.*') ? 'nav-item--active' : '' }}">Mis órdenes</a>
+                        <a href="{{ route('contact.index') }}" class="nav-item">Contacto</a>
+                    </div>
+                @endif
             @endauth
         </div>
     </nav>

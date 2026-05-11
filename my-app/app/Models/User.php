@@ -62,4 +62,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(ContactMessage::class, 'user_id');
     }
+
+    /**
+     * Determina si el usuario es administrador.
+     */
+    public function isAdmin(): bool
+    {
+        $adminEmails = array_filter(config('app.admin_emails', []));
+        
+        return in_array($this->email, $adminEmails, true) 
+            || (empty($adminEmails) && (int) $this->id === 1);
+    }
 }
