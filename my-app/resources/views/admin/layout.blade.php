@@ -12,6 +12,7 @@
             <a href="{{ route('admin.dashboard') }}" class="logo">TopBlex Admin</a>
             <nav class="flex items-center justify-end" style="gap: 2.5rem;">
                 <a href="{{ route('admin.dashboard') }}" class="topbar a" style="padding: 0.75rem 1.25rem; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.03em;">Dashboard</a>
+                <a href="{{ route('admin.users.index') }}" class="topbar a" style="padding: 0.75rem 1.25rem; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.03em;">Usuarios</a>
                 <a href="{{ route('admin.products.index') }}" class="topbar a" style="padding: 0.75rem 1.25rem; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.03em;">Productos</a>
                 <a href="{{ route('home') }}" class="topbar a" style="padding: 0.75rem 1.25rem; font-size: 1.15rem; font-weight: 700; letter-spacing: 0.03em;">Ver tienda</a>
                 <form action="{{ route('logout') }}" method="POST" class="inline">

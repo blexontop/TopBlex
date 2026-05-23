@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
+use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\CheckoutController;
 use App\Mail\WelcomeToTopblexMail;
 use App\Models\Category;
@@ -322,6 +323,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'esadmin'])->group(f
     Route::resource('products', AdminProductController::class)->except(['show']);
     Route::patch('/products/{product}/stock', [AdminProductController::class, 'updateStock'])
         ->name('products.stock');
+    
+    // Admin user management
+    Route::resource('users', AdminUserController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
 });
 
 Route::get('/contact', function () {
