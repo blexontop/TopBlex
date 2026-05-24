@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
 use App\Http\Controllers\CheckoutController;
 use App\Mail\WelcomeToTopblexMail;
+use App\Mail\PasswordChangedMail;
 use App\Models\Category;
 use App\Models\OrderItem;
 use App\Models\Order;
@@ -237,19 +238,33 @@ Route::middleware('auth')->group(function () {
             'phone' => ['nullable', 'string', 'max:50'],
             'city' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:255'],
-            'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
-
-        if (empty($data['password'])) {
-            unset($data['password']);
-        } else {
-            $data['password'] = Hash::make($data['password']);
-        }
 
         $user->update($data);
 
         return back()->with('success', 'Tu informacion se guardo correctamente.');
     })->name('account.update');
+
+    // Change password separately
+    Route::put('/account/password', function (Request $request) {
+        $user = $request->user();
+
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ]);
+
+        if (!Hash::check($data['current_password'], $user->password)) {
+            return back()->withErrors(['password' => 'La contraseña actual no coincide.']);
+        }
+
+        $user->update(['password' => Hash::make($data['password'])]);
+
+        // Send password changed notification
+        Mail::to($user->email)->send(new PasswordChangedMail($user));
+
+        return back()->with('success', 'Contraseña actualizada correctamente.');
+    })->name('account.password.update');
 
     Route::get('/checkout/stripe', [CheckoutController::class, 'show'])->name('stripe.checkout.show');
     Route::post('/checkout/stripe/session', [CheckoutController::class, 'createSession'])->name('stripe.checkout.session');

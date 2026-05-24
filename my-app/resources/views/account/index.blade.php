@@ -54,20 +54,37 @@
                 <input id="address" type="text" name="address" class="input-base" value="{{ old('address', $user->address) }}" />
             </div>
 
+            <div class="pt-2">
+                <button type="submit" class="btn-primary">Guardar informacion</button>
+            </div>
+        </form>
+    </div>
+
+    <div class="panel-card">
+        <h2 class="account-block-title">Cambiar contraseña</h2>
+        <form action="{{ route('account.password.update') }}" method="POST" class="space-y-4">
+            @csrf
+            @method('PUT')
+
+            <div>
+                <label class="form-label" for="current_password">Contraseña actual</label>
+                <input id="current_password" type="password" name="current_password" class="input-base" required />
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="form-label" for="password">Nueva password (opcional)</label>
-                    <input id="password" type="password" name="password" class="input-base" autocomplete="new-password" />
+                    <label class="form-label" for="password">Nueva contraseña</label>
+                    <input id="password" type="password" name="password" class="input-base" required autocomplete="new-password" />
                 </div>
 
                 <div>
-                    <label class="form-label" for="password_confirmation">Confirmar nueva password</label>
-                    <input id="password_confirmation" type="password" name="password_confirmation" class="input-base" autocomplete="new-password" />
+                    <label class="form-label" for="password_confirmation">Confirmar nueva contraseña</label>
+                    <input id="password_confirmation" type="password" name="password_confirmation" class="input-base" required autocomplete="new-password" />
                 </div>
             </div>
 
             <div class="pt-2">
-                <button type="submit" class="btn-primary">Guardar informacion</button>
+                <button type="submit" class="btn-primary">Actualizar contraseña</button>
             </div>
         </form>
     </div>
