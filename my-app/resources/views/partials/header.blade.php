@@ -49,8 +49,7 @@
                     <button type="submit" class="orders-link">Salir</button>
                 </form>
             @else
-                <a href="{{ route('login') }}" class="account-link">Entrar</a>
-                <a href="{{ route('register') }}" class="orders-link">Registro</a>
+                {{-- No mostrar enlaces de login/registro en el header --}}
             @endauth
             <a href="{{ route('cart.index') }}" class="cart-mini" aria-label="Cart">
                 <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" style="margin-right:0.3rem;">

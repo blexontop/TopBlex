@@ -27,6 +27,21 @@
                 </div>
 
                 <div>
+                    <label for="phone" class="form-label">Teléfono</label>
+                    <input id="phone" type="text" name="phone" class="input-base" value="{{ old('phone') }}" required autocomplete="tel" />
+                </div>
+
+                <div>
+                    <label for="city" class="form-label">Ciudad</label>
+                    <input id="city" type="text" name="city" class="input-base" value="{{ old('city') }}" required autocomplete="address-level2" />
+                </div>
+
+                <div>
+                    <label for="address" class="form-label">Dirección</label>
+                    <input id="address" type="text" name="address" class="input-base" value="{{ old('address') }}" required autocomplete="street-address" />
+                </div>
+
+                <div>
                     <label for="password" class="form-label">Contrasena</label>
                     <input id="password" type="password" name="password" class="input-base" required autocomplete="new-password" />
                 </div>
