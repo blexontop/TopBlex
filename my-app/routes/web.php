@@ -1,20 +1,21 @@
 <?php
 
+use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
-use App\Http\Controllers\CheckoutController;
+use App\Mail\OrderConfirmedMail;
 use App\Mail\WelcomeToTopblexMail;
 use App\Mail\PasswordChangedMail;
 use App\Models\Category;
-use App\Models\OrderItem;
-use App\Models\Order;
-use App\Models\Payment;
 use App\Models\Faq;
+use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Payment;
 use App\Models\Product;
 use App\Models\User;
-use Illuminate\Http\Request;
 use Illuminate\Database\QueryException;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -269,6 +270,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/stripe', [CheckoutController::class, 'show'])->name('stripe.checkout.show');
     Route::post('/checkout/stripe/session', [CheckoutController::class, 'createSession'])->name('stripe.checkout.session');
     Route::get('/checkout/stripe/success', [CheckoutController::class, 'success'])->name('stripe.checkout.success');
+    Route::get('/checkout/stripe/success-page/{order}', [CheckoutController::class, 'successPage'])->name('stripe.checkout.success.page');
     Route::get('/checkout/stripe/cancel', [CheckoutController::class, 'cancel'])->name('stripe.checkout.cancel');
 
     Route::post('/orders/confirm', function (Request $request) {
@@ -322,7 +324,10 @@ Route::middleware('auth')->group(function () {
 
         $request->session()->forget('cart');
 
-        return redirect()->route('account.index')->with('success', 'Order ' . $pedido->code . ' realizado con exito.');
+        // Enviar correo de confirmación
+        Mail::to($user->email)->send(new OrderConfirmedMail($pedido));
+
+        return redirect()->route('account.index')->with('success', 'Pedido ' . $pedido->code . ' realizado con exito. Se ha enviado una confirmacion a tu correo.');
     })->name('orders.confirm');
 
     Route::get('/orders', function (Request $request) {

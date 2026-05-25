@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\OrderConfirmedMail;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Payment;
@@ -9,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 use Stripe\Exception\ApiErrorException;
@@ -124,7 +126,14 @@ class CheckoutController extends Controller
         }
 
         if (Payment::where('reference', $checkoutSession->id)->exists()) {
-            $request->session()->forget(['cart', 'stripe_checkout_cart']);
+            $order = Order::whereHas('payments', function ($query) use ($checkoutSession) {
+                $query->where('reference', $checkoutSession->id);
+            })->first();
+
+            if ($order && $order->user_id === $request->user()->id) {
+                $request->session()->forget(['cart', 'stripe_checkout_cart']);
+                return redirect()->route('stripe.checkout.success.page', $order)->with('success', 'Pago confirmado.');
+            }
 
             return redirect()->route('account.index')->with('success', 'Pago confirmado. El pedido ya fue registrado.');
         }
@@ -179,7 +188,28 @@ class CheckoutController extends Controller
 
         $request->session()->forget(['cart', 'stripe_checkout_cart']);
 
-        return redirect()->route('account.index')->with('success', 'Pago recibido. Pedido '.$order->code.' confirmado.');
+        // Enviar correo de confirmación
+        try {
+            Mail::to($order->user->email)->send(new OrderConfirmedMail($order));
+        } catch (\Exception $e) {
+            \Log::error('Error enviando correo de confirmación: ' . $e->getMessage());
+        }
+
+        return redirect()->route('stripe.checkout.success.page', $order)->with('success', 'Pedido ' . $order->code . ' confirmado.');
+    }
+
+    public function successPage(Order $order): View|RedirectResponse
+    {
+        // Verificar que el usuario autenticado sea el propietario del pedido
+        if ($order->user_id !== auth()->id()) {
+            return redirect()->route('home')->withErrors([
+                'payment' => 'No tienes acceso a este pedido.',
+            ]);
+        }
+
+        return view('payments.success', [
+            'order' => $order->load('items', 'user'),
+        ]);
     }
 
     public function cancel(): RedirectResponse
