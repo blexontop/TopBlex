@@ -1,0 +1,64 @@
+﻿services:
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: topblex_app
+    restart: unless-stopped
+    working_dir: /var/www
+    volumes:
+      - ./:/var/www
+      - ./docker/php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    env_file:
+      - .env
+    networks:
+      - topblex_network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: topblex_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+    networks:
+      - topblex_network
+    depends_on:
+      - app
+
+  mysql:
+    image: mysql:8.0
+    container_name: topblex_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: topblex
+      MYSQL_ROOT_PASSWORD: secret
+      MYSQL_USER: topblex
+      MYSQL_PASSWORD: secret
+    volumes:
+      - topblex_mysql_data:/var/lib/mysql
+    ports:
+      - "3307:3306"
+    networks:
+      - topblex_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  topblex_network:
+    driver: bridge
+
+volumes:
+  topblex_mysql_data:
+    driver: local
