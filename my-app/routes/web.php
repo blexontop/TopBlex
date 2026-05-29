@@ -308,6 +308,7 @@ Route::middleware('auth')->group(function () {
                     'unit_price' => $price,
                     'quantity' => $quantity,
                     'subtotal' => $price * $quantity,
+                    'size' => $item['size'] ?? null,
                 ]);
             }
 
@@ -392,6 +393,7 @@ Route::get('/faqs', function () {
 Route::post('/cart/add', function (Request $request) {
     $validated = $request->validate([
         'product_id' => ['required', 'integer'],
+        'size' => ['required', 'string', 'in:XS,S,M,L,XL'],
     ]);
 
     $producto = \App\Models\Product::find($validated['product_id']);
@@ -400,7 +402,7 @@ Route::post('/cart/add', function (Request $request) {
     }
 
     $cart = $request->session()->get('cart', []);
-    $key = (string) $producto->id;
+    $key = $producto->id . '_' . $validated['size'];
 
     if (isset($cart[$key])) {
         $cart[$key]['quantity']++;
@@ -409,6 +411,7 @@ Route::post('/cart/add', function (Request $request) {
             'id' => $producto->id,
             'name' => $producto->name,
             'price' => (float) ($producto->price ?? 0),
+            'size' => $validated['size'],
             'quantity' => 1,
         ];
     }

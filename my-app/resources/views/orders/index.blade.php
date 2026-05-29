@@ -48,7 +48,7 @@
                             <div class="order-items">
                                 @foreach($pedido->items as $item)
                                     <div class="order-item-row">
-                                        <span>{{ $item->product_name }}</span>
+                                        <span>{{ $item->product_name }} {{ $item->size ? '(' . $item->size . ')' : '' }}</span>
                                         <span>x{{ $item->quantity }}</span>
                                         <span>${{ number_format((float) $item->subtotal, 2) }}</span>
                                     </div>

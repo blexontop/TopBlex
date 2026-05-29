@@ -11,10 +11,10 @@ Tu pedido ha sido confirmado exitosamente. Aquí están los detalles:
 
 ## Detalles del pedido
 
-| Producto | Cantidad | Precio Unitario | Subtotal |
-|----------|----------|-----------------|----------|
+| Producto | Talla | Cantidad | Precio Unitario | Subtotal |
+|----------|-------|----------|-----------------|----------|
 @foreach($items as $item)
-| {{ $item->product_name }} | {{ $item->quantity }} | €{{ number_format($item->unit_price, 2, ',', '.') }} | €{{ number_format($item->subtotal, 2, ',', '.') }} |
+| {{ $item->product_name }} | {{ $item->size ?? 'N/A' }} | {{ $item->quantity }} | €{{ number_format($item->unit_price, 2, ',', '.') }} | €{{ number_format($item->subtotal, 2, ',', '.') }} |
 @endforeach
 
 **Total:** €{{ number_format($total, 2, ',', '.') }}

@@ -15,7 +15,7 @@
                 <article class="product-card-container">
                     <div class="product-card-body">
                         <h2 class="product-name">{{ $item['name'] }}</h2>
-                        <p class="product-description">Cantidad: {{ $item['quantity'] }}</p>
+                        <p class="product-description">Talla: {{ $item['size'] ?? 'N/A' }} | Cantidad: {{ $item['quantity'] }}</p>
                         <div class="mt-3 flex items-center justify-between">
                             <span class="price-current">${{ number_format($item['price'], 2) }}</span>
                             <span class="section-muted">Subtotal: ${{ number_format($item['price'] * $item['quantity'], 2) }}</span>

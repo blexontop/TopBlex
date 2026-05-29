@@ -17,7 +17,7 @@
             <article class="product-card-container">
                 <div class="product-card-body">
                     <h2 class="product-name">{{ $item['name'] ?? 'Producto' }}</h2>
-                    <p class="product-description">Cantidad: {{ (int) ($item['quantity'] ?? 1) }}</p>
+                    <p class="product-description">Talla: {{ $item['size'] ?? 'N/A' }} | Cantidad: {{ (int) ($item['quantity'] ?? 1) }}</p>
                     <div class="mt-3 flex items-center justify-between">
                         <span class="price-current">${{ number_format((float) ($item['price'] ?? 0), 2) }}</span>
                         <span class="section-muted">Subtotal: ${{ number_format(((float) ($item['price'] ?? 0)) * ((int) ($item['quantity'] ?? 1)), 2) }}</span>

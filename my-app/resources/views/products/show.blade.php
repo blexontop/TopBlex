@@ -28,6 +28,17 @@
             <form action="{{ route('cart.add') }}" method="POST" class="mt-6">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $producto->id }}">
+                <div class="mb-4">
+                    <label for="size" class="block text-sm font-medium mb-2">Talla</label>
+                    <select name="size" id="size" class="w-full px-3 py-2 border border-gray-300 rounded-md" required>
+                        <option value="">Selecciona una talla</option>
+                        <option value="XS">XS</option>
+                        <option value="S">S</option>
+                        <option value="M">M</option>
+                        <option value="L">L</option>
+                        <option value="XL">XL</option>
+                    </select>
+                </div>
                 <button class="btn-primary" type="submit">Anadir al carrito</button>
             </form>
         </div>

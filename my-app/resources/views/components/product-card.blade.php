@@ -24,9 +24,17 @@
                 @endif
                 <span class="price-current">{{ $producto->price ? '$'.number_format($producto->price, 2) : '—' }}</span>
             </div>
-            <form action="{{ route('cart.add') }}" method="POST">
+            <form action="{{ route('cart.add') }}" method="POST" class="flex gap-2">
                 @csrf
                 <input type="hidden" name="product_id" value="{{ $producto->id }}">
+                <select name="size" class="px-2 py-1 text-sm border border-gray-300 rounded" required>
+                    <option value="">Talla</option>
+                    <option value="XS">XS</option>
+                    <option value="S">S</option>
+                    <option value="M">M</option>
+                    <option value="L">L</option>
+                    <option value="XL">XL</option>
+                </select>
                 <button class="btn-primary">Añadir</button>
             </form>
         </div>
