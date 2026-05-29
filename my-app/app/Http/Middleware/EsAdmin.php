@@ -26,7 +26,7 @@ class EsAdmin
         $isAllowedByEmail = in_array($user->email, $adminEmails, true);
         $isFallbackAdmin = empty($adminEmails) && (int) $user->id === 1;
 
-        if (!$isAllowedByEmail && !$isFallbackAdmin) {
+        if (!$user->isAdmin() && !$isAllowedByEmail && !$isFallbackAdmin) {
             abort(403, 'No autorizado.');
         }
 
