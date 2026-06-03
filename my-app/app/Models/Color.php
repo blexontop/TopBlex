@@ -2,9 +2,24 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
 class Color extends Model
 {
-    //
+    protected $fillable = [
+        'name',
+        'code',
+        'slug',
+        'is_active',
+    ];
+
+    protected $casts = [
+        'is_active' => 'boolean',
+    ];
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class, 'color_id');
+    }
 }

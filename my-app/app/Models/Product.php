@@ -27,8 +27,23 @@ class Product extends Model
         return $this->belongsTo(Category::class);
     }
 
+    public function collection(): BelongsTo
+    {
+        return $this->belongsTo(Collection::class);
+    }
+
     public function images(): HasMany
     {
         return $this->hasMany(ProductImage::class, 'product_id')->orderBy('sort_order');
+    }
+
+    public function variants(): HasMany
+    {
+        return $this->hasMany(ProductVariant::class, 'product_id');
+    }
+
+    public function favorites(): HasMany
+    {
+        return $this->hasMany(Favorite::class, 'product_id');
     }
 }
