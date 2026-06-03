@@ -4,6 +4,14 @@ use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ProductController as AdminProductController;
 use App\Http\Controllers\Admin\UserController as AdminUserController;
+use App\Http\Controllers\Site\HomeController;
+use App\Http\Controllers\Site\ProductController;
+use App\Http\Controllers\Site\CartController;
+use App\Http\Controllers\Site\AuthController;
+use App\Http\Controllers\Site\AccountController;
+use App\Http\Controllers\Site\OrderController;
+use App\Http\Controllers\Site\ContactController;
+use App\Http\Controllers\Site\FaqController;
 use App\Mail\OrderConfirmedMail;
 use App\Mail\WelcomeToTopblexMail;
 use App\Mail\PasswordChangedMail;
@@ -24,248 +32,37 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
-Route::get('/', function () {
-    $products = collect();
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
-    if (Schema::hasTable('products')) {
-        try {
-            $products = Product::where('is_visible', true)->latest()->take(12)->get();
-        } catch (QueryException) {
-            $products = collect();
-        }
-    }
+Route::get('/products', [ProductController::class, 'index'])->name('products.index');
 
-    return view('home', compact('products'));
-})->name('home');
+Route::get('/categories', [ProductController::class, 'categories'])->name('categories.index');
 
-Route::get('/products', function () {
-    if (!Schema::hasTable('products') || !Schema::hasTable('categories')) {
-        return view('products.index', [
-            'products' => collect(),
-            'generos' => collect(),
-            'tiposDisponibles' => collect(),
-            'generoSeleccionado' => 'all',
-            'tipoSeleccionado' => null,
-        ]);
-    }
+Route::get('/collections', [ProductController::class, 'collections'])->name('collections.index');
 
-    $query = Product::query()->with('category');
+Route::get('/products/{product}', [ProductController::class, 'show'])->name('products.show');
 
-    $generoSeleccionado = request('genero', 'all');
-    $tipoSeleccionado = request('tipo');
-
-    $generos = Category::query()
-        ->whereNull('parent_id')
-        ->whereIn('slug', ['hombre', 'mujer'])
-        ->where('is_active', true)
-        ->with(['children' => function ($q) {
-            $q->where('is_active', true)
-              ->orderBy('sort_order')
-              ->orderBy('name');
-        }])
-        ->orderBy('sort_order')
-        ->orderBy('name')
-        ->get();
-
-    if (in_array($generoSeleccionado, ['hombre', 'mujer'], true)) {
-        $query->whereHas('category', function ($q) use ($generoSeleccionado) {
-            $q->where('slug', $generoSeleccionado)
-              ->orWhereHas('parent', function ($p) use ($generoSeleccionado) {
-                  $p->where('slug', $generoSeleccionado);
-              });
-        });
-    }
-
-    if ($tipoSeleccionado) {
-        $query->whereHas('category', function ($q) use ($tipoSeleccionado) {
-            $q->where('slug', $tipoSeleccionado);
-        });
-    }
-
-    if ($q = request('q')) {
-        $query->where(function ($sq) use ($q) {
-            $sq->where('name', 'like', "%{$q}%")
-               ->orWhere('description', 'like', "%{$q}%");
-        });
-    }
-
-    $sort = request('sort', 'latest');
-    if ($sort === 'price_asc') {
-        $query->orderBy('price', 'asc');
-    } elseif ($sort === 'price_desc') {
-        $query->orderBy('price', 'desc');
-    } else {
-        $query->latest();
-    }
-
-    $products = $query
-        ->where('is_visible', true)
-        ->paginate(12)
-        ->appends(request()->query());
-
-    $tiposDisponibles = collect();
-    if (in_array($generoSeleccionado, ['hombre', 'mujer'], true)) {
-        $tiposDisponibles = $generos
-            ->firstWhere('slug', $generoSeleccionado)?->children ?? collect();
-    }
-
-    return view('products.index', compact(
-        'products',
-        'generos',
-        'tiposDisponibles',
-        'generoSeleccionado',
-        'tipoSeleccionado'
-    ));
-})->name('products.index');
-
-Route::get('/categories', function () {
-    return redirect()->route('products.index');
-})->name('categories.index');
-
-Route::get('/collections', function () {
-    return redirect()->route('products.index');
-})->name('collections.index');
-
-Route::get('/products/{product}', function (\App\Models\Product $product) {
-    return view('products.show', ['producto' => $product]);
-})->name('products.show');
-
-Route::get('/cart', function (Request $request) {
-    $cart = collect($request->session()->get('cart', []));
-    $total = $cart->sum(function (array $item) {
-        return ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
-    });
-
-    return view('cart.index', [
-        'items' => $cart->values(),
-        'total' => $total,
-    ]);
-})->name('cart.index');
+Route::get('/cart', [CartController::class, 'index'])->name('cart.index');
 
 Route::middleware('guest')->group(function () {
-    Route::get('/login', function () {
-        return view('auth.login');
-    })->name('login');
+    Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 
-    Route::post('/login', function (Request $request) {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-        ]);
+    Route::post('/login', [AuthController::class, 'attemptLogin'])->name('login.attempt');
 
-        $remember = (bool) $request->boolean('remember');
+    Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
 
-        if (!Auth::attempt($credentials, $remember)) {
-            return back()->withInput($request->only('email'))->withErrors([
-                'email' => 'Credenciales invalidas.',
-            ]);
-        }
-
-        $request->session()->regenerate();
-
-        // Redirigir según el rol del usuario
-        if (Auth::user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return redirect()->intended(route('account.index'));
-    })->name('login.attempt');
-
-    Route::get('/register', function () {
-        return view('auth.register');
-    })->name('register');
-
-    Route::post('/register', function (Request $request) {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'phone' => ['required', 'string', 'max:50'],
-            'city' => ['required', 'string', 'max:100'],
-            'address' => ['required', 'string', 'max:255'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        $user = User::create([
-            'name' => $data['name'],
-            'email' => $data['email'],
-            'phone' => $data['phone'],
-            'city' => $data['city'],
-            'address' => $data['address'],
-            'password' => Hash::make($data['password']),
-        ]);
-
-        Mail::to($user->email)->send(new WelcomeToTopblexMail($user));
-
-        Auth::login($user);
-        $request->session()->regenerate();
-
-        $message = 'Hola, ' . $user->name . '. Tu cuenta se creo correctamente.';
-
-        // Redirigir según el rol del usuario
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard')->with('success', $message);
-        }
-
-        return redirect()->route('account.index')->with('success', $message);
-    })->name('register.store');
+    Route::post('/register', [AuthController::class, 'register'])->name('register.store');
 });
 
-Route::post('/logout', function (Request $request) {
-    Auth::logout();
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
-
-    return redirect()->route('home');
-})->middleware('auth')->name('logout');
+Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/account', function (Request $request) {
-        $user = $request->user();
+    Route::get('/account', [AccountController::class, 'index'])->name('account.index');
 
-        // Redirigir admins al panel de admin
-        if ($user->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return view('account.index', compact('user'));
-    })->name('account.index');
-
-    Route::put('/account', function (Request $request) {
-        $user = $request->user();
-
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
-            'phone' => ['nullable', 'string', 'max:50'],
-            'city' => ['nullable', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:255'],
-        ]);
-
-        $user->update($data);
-
-        return back()->with('success', 'Tu informacion se guardo correctamente.');
-    })->name('account.update');
+    Route::put('/account', [AccountController::class, 'update'])->name('account.update');
 
     // Change password separately
-    Route::put('/account/password', function (Request $request) {
-        $user = $request->user();
-
-        $data = $request->validate([
-            'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
-
-        if (!Hash::check($data['current_password'], $user->password)) {
-            return back()->withErrors(['password' => 'La contraseña actual no coincide.']);
-        }
-
-        $user->update(['password' => Hash::make($data['password'])]);
-
-        // Send password changed notification
-        Mail::to($user->email)->send(new PasswordChangedMail($user));
-
-        return back()->with('success', 'Contraseña actualizada correctamente.');
-    })->name('account.password.update');
+    Route::put('/account/password', [AccountController::class, 'updatePassword'])->name('account.password.update');
 
     Route::get('/checkout/stripe', [CheckoutController::class, 'show'])->name('stripe.checkout.show');
     Route::post('/checkout/stripe/session', [CheckoutController::class, 'createSession'])->name('stripe.checkout.session');
@@ -273,75 +70,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/checkout/stripe/success-page/{order}', [CheckoutController::class, 'successPage'])->name('stripe.checkout.success.page');
     Route::get('/checkout/stripe/cancel', [CheckoutController::class, 'cancel'])->name('stripe.checkout.cancel');
 
-    Route::post('/orders/confirm', function (Request $request) {
-        $cart = collect($request->session()->get('cart', []));
-        if ($cart->isEmpty()) {
-            return redirect()->route('cart.index')->with('success', 'Tu carrito esta vacio.');
-        }
+    Route::post('/orders/confirm', [OrderController::class, 'confirm'])->name('orders.confirm');
 
-        $user = $request->user();
-
-        $pedido = DB::transaction(function () use ($cart, $user) {
-            $total = (float) $cart->sum(function (array $item) {
-                return ($item['price'] ?? 0) * ($item['quantity'] ?? 1);
-            });
-
-            $code = 'TBX-' . Str::upper(Str::random(8));
-
-            $pedido = Order::create([
-                'user_id' => $user->id,
-                'code' => $code,
-                'status' => 'pending',
-                'total' => $total,
-                'currency' => 'EUR',
-                'shipping_address' => trim(($user->address ?? '') . ' ' . ($user->city ?? '')),
-            ]);
-
-            foreach ($cart as $item) {
-                $quantity = (int) ($item['quantity'] ?? 1);
-                $price = (float) ($item['price'] ?? 0);
-
-                OrderItem::create([
-                    'order_id' => $pedido->id,
-                    'product_id' => $item['id'] ?? null,
-                    'product_name' => (string) ($item['name'] ?? 'Product'),
-                    'unit_price' => $price,
-                    'quantity' => $quantity,
-                    'subtotal' => $price * $quantity,
-                    'size' => $item['size'] ?? null,
-                ]);
-            }
-
-            Payment::create([
-                'order_id' => $pedido->id,
-                'method' => 'pending',
-                'status' => 'pending',
-                'reference' => 'REF-' . Str::upper(Str::random(10)),
-                'amount' => $total,
-            ]);
-
-            return $pedido;
-        });
-
-        $request->session()->forget('cart');
-
-        // Enviar correo de confirmación
-        Mail::to($user->email)->send(new OrderConfirmedMail($pedido));
-
-        return redirect()->route('account.index')->with('success', 'Pedido ' . $pedido->code . ' realizado con exito. Se ha enviado una confirmacion a tu correo.');
-    })->name('orders.confirm');
-
-    Route::get('/orders', function (Request $request) {
-        $user = $request->user();
-
-        $orders = Order::query()
-            ->with(['items'])
-            ->where('user_id', $user->id)
-            ->latest()
-            ->get();
-
-        return view('orders.index', compact('orders'));
-    })->name('orders.index');
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
 });
 
 Route::prefix('admin')->name('admin.')->middleware(['auth', 'esadmin'])->group(function () {
@@ -355,69 +86,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth', 'esadmin'])->group(f
     Route::resource('users', AdminUserController::class)->only(['index', 'show', 'edit', 'update', 'destroy']);
 });
 
-Route::get('/contact', function () {
-    return view('contact.index');
-})->name('contact.index');
+Route::get('/contact', [ContactController::class, 'index'])->name('contact.index');
 
-Route::post('/contact', function (Request $request) {
-    $data = $request->validate([
-        'name' => ['required', 'string', 'max:120'],
-        'email' => ['required', 'email', 'max:180'],
-        'subject' => ['required', 'string', 'max:180'],
-        'message' => ['required', 'string', 'max:3000'],
-    ]);
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
 
-    DB::table('contact_messages')->insert([
-        'user_id' => Auth::id(),
-        'name' => $data['name'],
-        'email' => $data['email'],
-        'subject' => $data['subject'],
-        'message' => $data['message'],
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+Route::get('/faqs', [FaqController::class, 'index'])->name('faqs.index');
 
-    return back()->with('success', 'Mensaje enviado correctamente.');
-})->name('contact.store');
-
-Route::get('/faqs', function () {
-    $preguntas = Faq::query()
-        ->where('is_active', true)
-        ->orderBy('sort_order')
-        ->orderByDesc('id')
-        ->get();
-
-    return view('faqs.index', compact('preguntas'));
-})->name('faqs.index');
-
-Route::post('/cart/add', function (Request $request) {
-    $validated = $request->validate([
-        'product_id' => ['required', 'integer'],
-        'size' => ['required', 'string', 'in:XS,S,M,L,XL'],
-    ]);
-
-    $producto = \App\Models\Product::find($validated['product_id']);
-    if (!$producto) {
-        return back()->with('success', 'Product no encontrado.');
-    }
-
-    $cart = $request->session()->get('cart', []);
-    $key = $producto->id . '_' . $validated['size'];
-
-    if (isset($cart[$key])) {
-        $cart[$key]['quantity']++;
-    } else {
-        $cart[$key] = [
-            'id' => $producto->id,
-            'name' => $producto->name,
-            'price' => (float) ($producto->price ?? 0),
-            'size' => $validated['size'],
-            'quantity' => 1,
-        ];
-    }
-
-    $request->session()->put('cart', $cart);
-
-    return back()->with('success', 'Product anadido al carrito.');
-})->name('cart.add');
+Route::post('/cart/add', [CartController::class, 'add'])->name('cart.add');
 
