@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Mail\PasswordChangedMail;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
@@ -27,11 +28,29 @@ class AccountController extends Controller
 
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                function ($attribute, $value, $fail) use ($user) {
+                    $normalized = strtolower(trim($value));
+                    $currentNormalized = strtolower(trim($user->email));
+                    
+                    // Only check if email changed
+                    if ($normalized !== $currentNormalized) {
+                        $exists = User::whereRaw('LOWER(email) = ?', [$normalized])->exists();
+                        if ($exists) {
+                            $fail('The email has already been taken.');
+                        }
+                    }
+                }
+            ],
             'phone' => ['nullable', 'string', 'max:50'],
             'city' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:255'],
         ]);
+
+        $data['email'] = strtolower(trim($data['email']));
 
         $user->update($data);
 

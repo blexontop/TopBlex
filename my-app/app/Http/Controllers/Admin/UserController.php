@@ -39,7 +39,23 @@ class UserController extends Controller
     {
         $data = $request->validate([
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $user->id],
+            'email' => [
+                'required',
+                'email',
+                'max:255',
+                function ($attribute, $value, $fail) use ($user) {
+                    $normalized = strtolower(trim($value));
+                    $currentNormalized = strtolower(trim($user->email));
+                    
+                    // Only check if email changed
+                    if ($normalized !== $currentNormalized) {
+                        $exists = User::whereRaw('LOWER(email) = ?', [$normalized])->exists();
+                        if ($exists) {
+                            $fail('The email has already been taken.');
+                        }
+                    }
+                }
+            ],
             'phone' => ['nullable', 'string', 'max:50'],
             'city' => ['nullable', 'string', 'max:100'],
             'address' => ['nullable', 'string', 'max:255'],
@@ -54,6 +70,8 @@ class UserController extends Controller
         }
 
         $data['is_admin'] = isset($data['is_admin']) ? (bool) $data['is_admin'] : false;
+        
+        $data['email'] = strtolower(trim($data['email']));
 
         $user->update($data);
 

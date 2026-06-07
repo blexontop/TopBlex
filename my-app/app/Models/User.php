@@ -4,6 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -51,6 +52,13 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
         ];
+    }
+
+    protected function email(): Attribute
+    {
+        return Attribute::make(
+            set: fn ($value) => strtolower(trim($value)),
+        );
     }
 
     public function orders(): HasMany

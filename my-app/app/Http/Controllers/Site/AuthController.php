@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 
 class AuthController extends Controller
@@ -66,7 +67,11 @@ class AuthController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
-        Mail::to($user->email)->send(new WelcomeToTopblexMail($user));
+        try {
+            Mail::to($user->email)->send(new WelcomeToTopblexMail($user));
+        } catch (\Throwable $e) {
+            Log::error('No se pudo enviar el correo de bienvenida: ' . $e->getMessage());
+        }
 
         Auth::login($user);
         $request->session()->regenerate();
