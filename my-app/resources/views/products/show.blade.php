@@ -38,6 +38,9 @@
                         <option value="L">L</option>
                         <option value="XL">XL</option>
                     </select>
+                    @error('size')
+                        <p style="margin-top:0.5rem;font-size:0.875rem;color:#dc2626;">{{ $message }}</p>
+                    @enderror
                 </div>
                 <button class="btn-primary" type="submit">Anadir al carrito</button>
             </form>

@@ -1,6 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+    @if ($errors->has('size') || $errors->has('product_id'))
+        <div style="margin-bottom:1rem;padding:0.75rem 1rem;border-radius:0.5rem;background:#fee2e2;border:1px solid #fca5a5;color:#991b1b;">
+            {{ $errors->first('size') ?: $errors->first('product_id') }}
+        </div>
+    @endif
+
     <div class="flex items-center justify-between mb-6">
         <h1 class="text-2xl font-semibold">Productos</h1>
         <div class="flex items-center space-x-3">

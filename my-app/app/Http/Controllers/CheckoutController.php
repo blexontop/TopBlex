@@ -168,6 +168,7 @@ class CheckoutController extends Controller
                     'order_id' => $order->id,
                     'product_id' => $item['id'] ?? null,
                     'product_name' => (string) ($item['name'] ?? 'Producto'),
+                    'size' => $item['size'] ?? null,
                     'unit_price' => $price,
                     'quantity' => $quantity,
                     'subtotal' => $price * $quantity,

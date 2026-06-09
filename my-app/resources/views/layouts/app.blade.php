@@ -13,6 +13,12 @@
     @yield('hero')
 
     <main class="container mx-auto px-4 py-8">
+        @if (session('success'))
+            <div style="margin-bottom:1rem;padding:0.75rem 1rem;border-radius:0.5rem;background:#dcfce7;border:1px solid #86efac;color:#166534;">
+                {{ session('success') }}
+            </div>
+        @endif
+
         @yield('content')
     </main>
 

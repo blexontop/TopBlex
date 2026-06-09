@@ -26,11 +26,15 @@ class CartController extends Controller
         $validated = $request->validate([
             'product_id' => ['required', 'integer'],
             'size' => ['required', 'string', 'in:XS,S,M,L,XL'],
+        ], [
+            'size.required' => 'Debes seleccionar una talla antes de anadir el producto al carrito.',
+            'size.in' => 'La talla seleccionada no es valida.',
+            'product_id.required' => 'No se ha indicado el producto.',
         ]);
 
         $producto = Product::find($validated['product_id']);
         if (!$producto) {
-            return back()->with('success', 'Product no encontrado.');
+            return back()->withErrors(['product_id' => 'Producto no encontrado.']);
         }
 
         $cart = $request->session()->get('cart', []);

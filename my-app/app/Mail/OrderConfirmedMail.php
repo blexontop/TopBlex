@@ -36,7 +36,7 @@ class OrderConfirmedMail extends Mailable
     public function content(): Content
     {
         return new Content(
-            view: 'emails.order-confirmed',
+            markdown: 'emails.order-confirmed',
             with: [
                 'order' => $this->order,
                 'user' => $this->order->user,
