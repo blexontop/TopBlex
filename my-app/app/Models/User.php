@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
+// Modelo del usuario. "Authenticatable" = Laravel lo usa para el login y la sesión.
 class User extends Authenticatable
 {
     /** @use HasFactory<UserFactory> */
@@ -49,11 +50,12 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'password' => 'hashed', // la contraseña se cifra automáticamente al guardarla
             'is_admin' => 'boolean',
         ];
     }
 
+    // Normaliza el email: lo guarda en minúsculas y sin espacios para evitar duplicados.
     protected function email(): Attribute
     {
         return Attribute::make(
@@ -71,6 +73,7 @@ class User extends Authenticatable
         return $this->hasMany(ContactMessage::class, 'user_id');
     }
 
+    // Indica si el usuario es administrador (para proteger el panel /admin).
     public function isAdmin(): bool
     {
         return (bool) ($this->is_admin ?? false);

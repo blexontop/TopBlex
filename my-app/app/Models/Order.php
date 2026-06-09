@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Model;
 
+// Modelo del pedido (cabecera): de quién es, su código, estado, total y dirección de envío.
 class Order extends Model
 {
     protected $fillable = [
@@ -18,16 +19,19 @@ class Order extends Model
         'notes',
     ];
 
+    // El pedido pertenece a un usuario.
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    // Un pedido tiene muchas líneas (un producto por línea).
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class, 'order_id');
     }
 
+    // Un pedido tiene uno o varios pagos asociados.
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class, 'order_id');

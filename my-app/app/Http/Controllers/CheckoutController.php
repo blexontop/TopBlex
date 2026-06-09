@@ -16,8 +16,10 @@ use Illuminate\View\View;
 use Stripe\Exception\ApiErrorException;
 use Stripe\StripeClient;
 
+// Controlador del pago con Stripe: resumen, iniciar pago, confirmarlo y registrar el pedido.
 class CheckoutController extends Controller
 {
+    // Muestra el resumen del carrito antes de pagar.
     public function show(Request $request): View|RedirectResponse
     {
         $items = $this->cartFromSession($request);
@@ -38,6 +40,7 @@ class CheckoutController extends Controller
         ]);
     }
 
+    // Crea la sesión de pago en Stripe y redirige al usuario a la página segura de Stripe.
     public function createSession(Request $request): RedirectResponse
     {
         $items = $this->cartFromSession($request);
@@ -55,8 +58,10 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // Guarda una copia del carrito para recuperarlo al volver de Stripe.
         $request->session()->put('stripe_checkout_cart', $items->values()->all());
 
+        // Convierte cada producto del carrito al formato que pide Stripe (precio en céntimos).
         $lineItems = $items->map(function (array $item): array {
             $priceInCents = max(1, (int) round(((float) ($item['price'] ?? 0)) * 100));
 
@@ -75,6 +80,7 @@ class CheckoutController extends Controller
         try {
             $stripe = new StripeClient($secret);
 
+            // Crea la sesión de pago indicando a dónde volver si paga (success) o cancela (cancel).
             $checkoutSession = $stripe->checkout->sessions->create([
                 'mode' => 'payment',
                 'line_items' => $lineItems,
@@ -91,9 +97,11 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // Redirige al usuario a la pasarela de Stripe para que introduzca su tarjeta.
         return redirect()->away((string) $checkoutSession->url);
     }
 
+    // Stripe devuelve al usuario aquí tras pagar: verifica el pago y registra el pedido.
     public function success(Request $request): RedirectResponse
     {
         $sessionId = (string) $request->query('session_id', '');
@@ -111,6 +119,7 @@ class CheckoutController extends Controller
         }
 
         try {
+            // Pregunta a Stripe por la sesión de pago usando su ID.
             $stripe = new StripeClient($secret);
             $checkoutSession = $stripe->checkout->sessions->retrieve($sessionId, []);
         } catch (ApiErrorException $e) {
@@ -119,12 +128,14 @@ class CheckoutController extends Controller
             ]);
         }
 
+        // SEGURIDAD: solo continúa si Stripe confirma que el pago está 'paid' (pagado).
         if (($checkoutSession->payment_status ?? null) !== 'paid') {
             return redirect()->route('stripe.checkout.show')->withErrors([
                 'payment' => 'Stripe aun no confirma el pago como completado.',
             ]);
         }
 
+        // IDEMPOTENCIA: si ya existe un pago con esta referencia, no se duplica el pedido.
         if (Payment::where('reference', $checkoutSession->id)->exists()) {
             $order = Order::whereHas('payments', function ($query) use ($checkoutSession) {
                 $query->where('reference', $checkoutSession->id);
@@ -150,7 +161,9 @@ class CheckoutController extends Controller
             return (float) ($item['price'] ?? 0) * (int) ($item['quantity'] ?? 1);
         });
 
+        // TRANSACCIÓN: crea el pedido, sus líneas y el pago todo junto (o nada si algo falla).
         $order = DB::transaction(function () use ($items, $total, $user, $checkoutSession) {
+            // Cabecera del pedido.
             $order = Order::create([
                 'user_id' => $user->id,
                 'code' => 'TBX-' . Str::upper(Str::random(8)),
@@ -160,6 +173,7 @@ class CheckoutController extends Controller
                 'shipping_address' => trim(($user->address ?? '').' '.($user->city ?? '')),
             ]);
 
+            // Una línea por cada producto del carrito (guarda también la talla).
             foreach ($items as $item) {
                 $quantity = max(1, (int) ($item['quantity'] ?? 1));
                 $price = (float) ($item['price'] ?? 0);
@@ -175,6 +189,7 @@ class CheckoutController extends Controller
                 ]);
             }
 
+            // Registro del pago, con la referencia que devuelve Stripe.
             Payment::create([
                 'order_id' => $order->id,
                 'method' => 'stripe',
@@ -187,9 +202,10 @@ class CheckoutController extends Controller
             return $order;
         });
 
+        // Vacía el carrito porque el pedido ya está registrado.
         $request->session()->forget(['cart', 'stripe_checkout_cart']);
 
-        // Enviar correo de confirmación
+        // Envía el correo con el comprobante del pago al comprador.
         try {
             Mail::to($order->user->email)->send(new OrderConfirmedMail($order));
         } catch (\Exception $e) {
@@ -199,6 +215,7 @@ class CheckoutController extends Controller
         return redirect()->route('stripe.checkout.success.page', $order)->with('success', 'Pedido ' . $order->code . ' confirmado.');
     }
 
+    // Página de "pedido confirmado". Comprueba que el pedido pertenece al usuario que lo ve.
     public function successPage(Order $order): View|RedirectResponse
     {
         // Verificar que el usuario autenticado sea el propietario del pedido
@@ -213,6 +230,7 @@ class CheckoutController extends Controller
         ]);
     }
 
+    // Si el usuario cancela el pago en Stripe, vuelve al carrito.
     public function cancel(): RedirectResponse
     {
         return redirect()->route('cart.index')->withErrors([
@@ -220,6 +238,7 @@ class CheckoutController extends Controller
         ]);
     }
 
+    // Devuelve el carrito guardado en la sesión.
     private function cartFromSession(Request $request): Collection
     {
         return collect($request->session()->get('cart', []));

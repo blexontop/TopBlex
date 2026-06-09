@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use Illuminate\Http\Request;
 
+// Controlador del carrito: guarda los productos en la sesión (todavía no en la base de datos).
 class CartController extends Controller
 {
+    // Muestra el carrito y calcula el total.
     public function index(Request $request)
     {
         $cart = collect($request->session()->get('cart', []));
@@ -21,8 +23,10 @@ class CartController extends Controller
         ]);
     }
 
+    // Añade un producto al carrito. La talla es OBLIGATORIA.
     public function add(Request $request)
     {
+        // Valida que se haya elegido una talla válida (XS, S, M, L o XL).
         $validated = $request->validate([
             'product_id' => ['required', 'integer'],
             'size' => ['required', 'string', 'in:XS,S,M,L,XL'],
@@ -37,6 +41,7 @@ class CartController extends Controller
             return back()->withErrors(['product_id' => 'Producto no encontrado.']);
         }
 
+        // La clave combina producto + talla: así "camiseta M" y "camiseta L" son líneas distintas.
         $cart = $request->session()->get('cart', []);
         $key = $producto->id . '_' . $validated['size'];
 

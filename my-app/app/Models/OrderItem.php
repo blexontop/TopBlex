@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Model;
 
+// Modelo de cada línea del pedido: un producto concreto con su talla, precio y cantidad.
 class OrderItem extends Model
 {
     protected $fillable = [
