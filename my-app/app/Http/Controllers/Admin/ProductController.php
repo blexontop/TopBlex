@@ -12,8 +12,10 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
+// CRUD de productos del administrador (Crear, Leer, Actualizar, Borrar y ajustar stock).
 class ProductController extends Controller
 {
+    // Lista los productos con buscador (por nombre o SKU) y paginación de 15 en 15.
     public function index(Request $request): View
     {
         $search = trim((string) $request->query('q', ''));
@@ -33,6 +35,7 @@ class ProductController extends Controller
         return view('admin.products.index', compact('products', 'search'));
     }
 
+    // Muestra el formulario para crear un producto nuevo.
     public function create(): View
     {
         return view('admin.products.create', [
@@ -42,13 +45,14 @@ class ProductController extends Controller
         ]);
     }
 
+    // Valida y guarda el producto nuevo en la base de datos.
     public function store(Request $request): RedirectResponse
     {
         $validated = $request->validate($this->rules());
 
         $product = new Product();
         $product->fill($this->payload($validated, $request));
-        $product->slug = $this->makeUniqueSlug($validated['name']);
+        $product->slug = $this->makeUniqueSlug($validated['name']); // genera la URL amigable
         $product->save();
 
         return redirect()
@@ -56,6 +60,7 @@ class ProductController extends Controller
             ->with('success', 'Producto creado correctamente.');
     }
 
+    // Muestra el formulario para editar un producto existente.
     public function edit(Product $product): View
     {
         return view('admin.products.edit', [
@@ -65,6 +70,7 @@ class ProductController extends Controller
         ]);
     }
 
+    // Valida y guarda los cambios de un producto existente.
     public function update(Request $request, Product $product): RedirectResponse
     {
         $validated = $request->validate($this->rules($product));
@@ -82,6 +88,7 @@ class ProductController extends Controller
             ->with('success', 'Producto actualizado correctamente.');
     }
 
+    // Elimina un producto.
     public function destroy(Product $product): RedirectResponse
     {
         $product->delete();
@@ -91,6 +98,7 @@ class ProductController extends Controller
             ->with('success', 'Producto eliminado correctamente.');
     }
 
+    // Suma o resta stock a un producto (nunca baja de 0).
     public function updateStock(Request $request, Product $product): RedirectResponse
     {
         $data = $request->validate([
@@ -105,6 +113,7 @@ class ProductController extends Controller
             ->with('success', 'Stock ajustado correctamente.');
     }
 
+    // Reglas de validación del formulario de producto (el SKU debe ser único).
     protected function rules(?Product $product = null): array
     {
         return [
@@ -126,6 +135,7 @@ class ProductController extends Controller
         ];
     }
 
+    // Prepara los datos ya validados para guardarlos en el producto.
     protected function payload(array $validated, Request $request): array
     {
         return [
@@ -142,6 +152,7 @@ class ProductController extends Controller
         ];
     }
 
+    // Crea un slug (URL amigable) único; si ya existe, le añade un número al final.
     protected function makeUniqueSlug(string $name, ?int $ignoreId = null): string
     {
         $base = Str::slug($name);

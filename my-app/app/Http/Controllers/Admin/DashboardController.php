@@ -9,13 +9,17 @@ use App\Models\Product;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 
+// Panel de administración: calcula las estadísticas del negocio (ventas, stock, etc.).
 class DashboardController extends Controller
 {
+    // Reúne los números clave y los manda a la vista del dashboard.
     public function index()
     {
         try {
-            $totalProducts = Product::count();
-            $totalStock = (int) Product::sum('stock');
+            $totalProducts = Product::count();         
+            $totalStock = (int) Product::sum('stock');  
+
+            // Productos con poco stock (5 o menos) para avisar de reposición.
             $lowStockProducts = Product::query()
                 ->where('stock', '<=', 5)
                 ->orderBy('stock')
@@ -23,16 +27,20 @@ class DashboardController extends Controller
                 ->limit(6)
                 ->get(['id', 'name', 'stock']);
 
-            $totalOrders = Order::count();
+            $totalOrders = Order::count();              // nº total de pedidos
+
+            // Ingresos totales (sin contar pedidos cancelados ni reembolsados).
             $totalRevenue = (float) Order::query()
                 ->whereNotIn('status', ['cancelled', 'refunded'])
                 ->sum('total');
 
+            // Ingresos solo del mes actual.
             $monthlyRevenue = (float) Order::query()
                 ->whereNotIn('status', ['cancelled', 'refunded'])
                 ->whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])
                 ->sum('total');
 
+            // Los 5 productos más vendidos (sumando las cantidades vendidas).
             $topProducts = OrderItem::query()
                 ->select('product_name', DB::raw('SUM(quantity) as total_sold'))
                 ->groupBy('product_name')
@@ -40,6 +48,7 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get();
         } catch (QueryException) {
+            // Si las tablas aún no existen, muestra el panel con valores a cero.
             $totalProducts = 0;
             $totalStock = 0;
             $lowStockProducts = collect();
